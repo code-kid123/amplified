@@ -1,0 +1,56 @@
+# Netlify configuration — Amplified Properties (Next.js 16)
+#
+# Netlify automatically detects Next.js and installs the official Next.js
+# Runtime (@netlify/plugin-nextjs), which handles SSR, route handlers, and
+# static assets. There is intentionally no `[[plugins]]` block here: manually
+# declaring the plugin without it being installed as a dependency is a common
+# source of "plugin not found" deploy failures.
+#
+# Keep the default Next.js server output. Do NOT add `output: "export"` to
+# next.config.ts and do NOT change publish to `out` — this app uses dynamic
+# routes (`/properties/[slug]`) that require the Netlify Next.js runtime.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+  NPM_FLAGS = "--no-audit --no-fund"
+
+# ── Security headers ──────────────────────────────────────────────────────────
+# Applied to every response. No CSP is set here because Next.js injects inline
+# bootstrap scripts; a strict CSP must be added together with nonce support.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+# ── Asset caching ─────────────────────────────────────────────────────────────
+# Next.js fingerprints files in /_next/static, so they can be cached forever.
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Local images added under public/images later will be immutable too.
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Brand assets keep a shorter cache so logo updates propagate quickly.
+[[headers]]
+  for = "/icon.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/logo.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
